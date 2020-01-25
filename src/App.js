@@ -68,12 +68,6 @@ const CartItemStyles = makeStyles(theme => ({
     height: 60,
     width: 60
   },
-  removeItem: {
-    display: "none"
-  },
-  default:{
-    display: "true"
-  }
 }));
 
 
@@ -196,7 +190,8 @@ const useSelected = () => {
           tempItems[index] = t
         }
     })
-    updateItemsSelected(tempItems)
+    
+    updateItemsSelected(tempItems.filter(item => item.quantity !== 0))
     }
     return [itemsSelected,addItemToCart,removeItemFromCart];
   } 
@@ -217,10 +212,10 @@ const CartDrawer = ({itemsSelected, updateItemsSelected,removeItemFromCart}) => 
     setState({ ...state, [side]: open });
   };
   const sideList = side => (
-    <div className = {classes.list} role = "presentation" onClick = {toggleDrawer(side, false)} onKeyDown = {toggleDrawer(side, false)}>
+    <div className = {classes.list} role = "presentation"  onKeyDown = {() => toggleDrawer(side, false)}>
       <List>
         {items.map(items => 
-          <ListItem className = {items.quantity > 0? "": classes.removeItem}>
+          <ListItem>
             
             <Grid container direction="row" alignItems="center">
               <Grid item>
@@ -252,6 +247,7 @@ const CartDrawer = ({itemsSelected, updateItemsSelected,removeItemFromCart}) => 
         <AddShoppingCartIcon />
       </IconButton>
       <Drawer anchor = "right" open = {state.right} onClose={toggleDrawer('right', false)}>
+        <p>Shopping Cart   </p>
         {sideList('right')}
       </Drawer>
     </React.Fragment>
