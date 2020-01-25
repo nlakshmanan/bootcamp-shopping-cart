@@ -70,6 +70,9 @@ const CartItemStyles = makeStyles(theme => ({
   },
   removeItem: {
     display: "none"
+  },
+  default:{
+    display: "true"
   }
 }));
 
@@ -183,7 +186,19 @@ const useSelected = () => {
       console.log("tempItems 2", tempItems)
       updateItemsSelected(tempItems)
     }     
-    return [itemsSelected,addItemToCart];
+
+    const removeItemFromCart = (itemKey) => {
+      let tempItems = itemsSelected
+      tempItems.forEach( (data, index) => {
+        if(data.key === itemKey && data.quantity > 0){
+          let t = tempItems[index]
+          t.quantity = t.quantity - 1
+          tempItems[index] = t
+        }
+    })
+    updateItemsSelected(tempItems)
+    }
+    return [itemsSelected,addItemToCart,removeItemFromCart];
   } 
   
 
@@ -191,8 +206,7 @@ const useSelected = () => {
 const getTotalPrice = ({items}) => {
   return <p> {items.reduce((total, p) => total + p.price * p.quantity, 0)} </p>
 }
-const CartDrawer = ({itemsSelected, updateItemsSelected}) => {
-  console.log(itemsSelected)
+const CartDrawer = ({itemsSelected, updateItemsSelected,removeItemFromCart}) => {
   const classes = CartItemStyles();
   const [state, setState] = useState({right: false});
   const items = itemsSelected;
@@ -202,22 +216,11 @@ const CartDrawer = ({itemsSelected, updateItemsSelected}) => {
     }
     setState({ ...state, [side]: open });
   };
-  const removeCartItem = ({itemKey}) => {
-    /*let tempItems = [...itemsSelected]
-    tempItems.forEach( (data, index) => {
-      if(data.key === itemKey){
-        let t = tempItems[index]
-        t.quantity = t.quantity - 1
-        tempItems[index] = t
-      }
-    })
-    updateItemsSelected(tempItems,[])*/
-  }
   const sideList = side => (
     <div className = {classes.list} role = "presentation" onClick = {toggleDrawer(side, false)} onKeyDown = {toggleDrawer(side, false)}>
       <List>
         {items.map(items => 
-          <ListItem className = {items.quantity > 0? null: console.log("none")}>
+          <ListItem className = {items.quantity > 0? "": classes.removeItem}>
             
             <Grid container direction="row" alignItems="center">
               <Grid item>
@@ -226,7 +229,7 @@ const CartDrawer = ({itemsSelected, updateItemsSelected}) => {
                 <br/>Price: ${items.price}
                 <br/>Size: {items.size}
                 <br/>Quantity: {items.quantity}
-                <IconButton onClick= {removeCartItem(items.key) } edge = "start" color="primary" aria-label="remove one item from cart">
+                <IconButton onClick= { () => removeItemFromCart(items.key) } edge = "start" color="primary" aria-label="remove one item from cart">
                 <RemoveCircleIcon />
                 </IconButton>
                 </Card>
@@ -257,7 +260,7 @@ const CartDrawer = ({itemsSelected, updateItemsSelected}) => {
 
 const App = () => {
   const [data, setData] = useState({});
-  const [itemsSelected, updateItemsSelected] = useSelected();
+  const [itemsSelected, updateItemsSelected,removeItemFromCart] = useSelected();
   const products = Object.values(data);
   useEffect(() => {
     const fetchProducts = async () => {
@@ -270,7 +273,7 @@ const App = () => {
 
   return (
     <ul>
-      <CartDrawer itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected}/>
+      <CartDrawer itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected} removeItemFromCart={removeItemFromCart}/>
       <CardList products = {products} itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected}/>
     </ul>
   );
