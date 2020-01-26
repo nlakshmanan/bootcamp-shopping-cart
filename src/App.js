@@ -107,12 +107,36 @@ const ButtonSize = ({size,itemSizeList,updateSizeList}) => {
   );
 }
 
-const MediaCard = ({product,itemsSelected, updateItemsSelected }) => {
+const AvailableSizes = ({product,inventory,setInventory,itemsSelected, updateItemsSelected,itemSizeList, updateSizeList}) => {
+  if (Object.keys(inventory).length === 0) {
+    return null;
+  }
+  const sku = product.sku;
+  return (
+    <div>
+      {inventory[sku]["S"] !== 0 ? (
+        <ButtonSize size = {"S"} itemSizeList={itemSizeList} updateSizeList={updateSizeList}/>
+      ) : null}
+      {inventory[sku]["M"] !== 0 ? (
+        <ButtonSize size = {"M"} itemSizeList={itemSizeList} updateSizeList={updateSizeList}/>
+      ) : null}
+      {inventory[sku]["L"] !== 0 ? (
+        <ButtonSize size = {"L"} itemSizeList={itemSizeList} updateSizeList={updateSizeList}/>
+      ) : null}
+      {inventory[sku]["XL"] !== 0 ? (
+        <ButtonSize size = {"XL"} itemSizeList={itemSizeList} updateSizeList={updateSizeList}/>
+      ) : null}
+    </div>
+  );
+
+}
+
+const MediaCard = ({product,inventory,setInventory,itemsSelected, updateItemsSelected }) => {
   const classes = useStyles();
   const [itemSizeList, updateSizeList] = useState([]);
   const cartItems = itemSizeList;
   const addToCart = () => {
-      updateItemsSelected(product,cartItems);
+      updateItemsSelected(product,cartItems,inventory,setInventory);
     };
 
   return(
@@ -123,7 +147,7 @@ const MediaCard = ({product,itemsSelected, updateItemsSelected }) => {
       <Typography gutterBottom variant="h9" component="h2">{product.title}</Typography>
       <Typography variant="body2" color="textSecondary" component="p">{product.desc}</Typography>
       <Typography variant="body1" color="textPrimary" component="p">${product.price}</Typography>
-      {sizeList.map(size => <ButtonSize size = {size} itemSizeList={itemSizeList} updateSizeList={updateSizeList}/>)}
+      <AvailableSizes product={product} inventory={inventory} setInventory={setInventory} itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected} itemSizeList={itemSizeList} updateSizeList={updateSizeList} />
       
     </CardContent>
     </CardActionArea>
@@ -140,14 +164,14 @@ const MediaCard = ({product,itemsSelected, updateItemsSelected }) => {
   )
 };
 
-const CardList = ({ products,itemsSelected, updateItemsSelected }) => {
+const CardList = ({ products,inventory,setInventory,itemsSelected, updateItemsSelected }) => {
   const classes = useStyles();
   return (
     <div className={classes.root}>
        <Grid container spacing={3}>
         { products.map(product =>
         <Grid item xs={3}>
-           <MediaCard  product={product} itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected}/>
+           <MediaCard  product={product} inventory={inventory} setInventory={setInventory} itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected}/>
            </Grid>) }
         </Grid>
     </div>
@@ -156,32 +180,37 @@ const CardList = ({ products,itemsSelected, updateItemsSelected }) => {
 
 const useSelected = () => {
   const [itemsSelected, updateItemsSelected] = useState([]);
-  const addItemToCart = (product, sizeList) => {
+  const addItemToCart = (product, sizeList,inventory,setInventory) => {
     let tempItems = [...itemsSelected];
+    let tempInventory = inventory
     //console.log("tempItems", tempItems)
 
     sizeList.forEach(size => {
       console.log("size", size)
-      const itemKey = product.sku + size;
+      const itemKey = product.sku + size[0];
       if (tempItems.find (x => x.key === itemKey)){
         //console.log("Found", itemKey)
         tempItems.forEach( (data, index) => {
             if(data.key === itemKey){
               let t = tempItems[index]
               t.quantity = t.quantity + 1
-              tempItems[index] = t
+              setInventory(tempInventory)
             }
         })
       }
       else{
         tempItems = tempItems.concat([{key: itemKey, ...product, size,quantity:1}])
       }
+      tempInventory[product.sku][size] = tempInventory[product.sku][size] - 1
+      setInventory(tempInventory)
       })
       console.log("tempItems 2", tempItems)
+
       updateItemsSelected(tempItems)
     }     
 
-    const removeItemFromCart = (itemKey) => {
+    const removeItemFromCart = (itemKey,inventory,setInventory) => {
+      let tempInventory = inventory
       let tempItems = itemsSelected
       tempItems.forEach( (data, index) => {
         if(data.key === itemKey && data.quantity > 0){
@@ -190,8 +219,14 @@ const useSelected = () => {
           tempItems[index] = t
         }
     })
-    
-    updateItemsSelected(tempItems.filter(item => item.quantity !== 0))
+      let sku = itemKey.slice(0,itemKey.length - 1)
+      let size = itemKey.slice(itemKey.length - 1)
+      if(size === 'X')
+        size = "XL"
+      console.log(sku,size)
+      tempInventory[sku][size] = tempInventory[sku][size] + 1
+      setInventory(tempInventory)
+      updateItemsSelected(tempItems.filter(item => item.quantity !== 0))
     }
     return [itemsSelected,addItemToCart,removeItemFromCart];
   } 
@@ -201,7 +236,7 @@ const useSelected = () => {
 const getTotalPrice = ({items}) => {
   return <p> {items.reduce((total, p) => total + p.price * p.quantity, 0)} </p>
 }
-const CartDrawer = ({itemsSelected, updateItemsSelected,removeItemFromCart}) => {
+const CartDrawer = ({itemsSelected, inventory , setInventory, updateItemsSelected,removeItemFromCart}) => {
   const classes = CartItemStyles();
   const [state, setState] = useState({right: false});
   const items = itemsSelected;
@@ -224,7 +259,7 @@ const CartDrawer = ({itemsSelected, updateItemsSelected,removeItemFromCart}) => 
                 <br/>Price: ${items.price}
                 <br/>Size: {items.size}
                 <br/>Quantity: {items.quantity}
-                <IconButton onClick= { () => removeItemFromCart(items.key) } edge = "start" color="primary" aria-label="remove one item from cart">
+                <IconButton onClick= { () => removeItemFromCart(items.key,inventory , setInventory) } edge = "start" color="primary" aria-label="remove one item from cart">
                 <RemoveCircleIcon />
                 </IconButton>
                 </Card>
@@ -256,6 +291,8 @@ const CartDrawer = ({itemsSelected, updateItemsSelected,removeItemFromCart}) => 
 
 const App = () => {
   const [data, setData] = useState({});
+  const [inventory, setInventory] = useState({});
+
   const [itemsSelected, updateItemsSelected,removeItemFromCart] = useSelected();
   const products = Object.values(data);
   useEffect(() => {
@@ -264,13 +301,19 @@ const App = () => {
       const json = await response.json();
       setData(json);
     };
+    const fetchInventory = async () => {
+      const response = await fetch("/data/inventory.json");
+      const json = await response.json();
+      setInventory(json);
+    };
     fetchProducts();
+    fetchInventory();
   }, []);
 
   return (
     <ul>
-      <CartDrawer itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected} removeItemFromCart={removeItemFromCart}/>
-      <CardList products = {products} itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected}/>
+      <CartDrawer itemsSelected = {itemsSelected} inventory={inventory} setInventory={setInventory} updateItemsSelected = {updateItemsSelected} removeItemFromCart={removeItemFromCart}/>
+      <CardList products = {products} inventory={inventory} setInventory={setInventory} itemsSelected = {itemsSelected} updateItemsSelected = {updateItemsSelected}/>
     </ul>
   );
 };
