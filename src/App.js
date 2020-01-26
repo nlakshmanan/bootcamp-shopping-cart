@@ -137,6 +137,8 @@ const MediaCard = ({product,inventory,setInventory,itemsSelected, updateItemsSel
   const cartItems = itemSizeList;
   const addToCart = () => {
       updateItemsSelected(product,cartItems,inventory,setInventory);
+      let tempitemSizeList = itemSizeList
+      updateSizeList(tempitemSizeList.filter(size => inventory[product.sku][size] !== 0))
     };
 
   return(
