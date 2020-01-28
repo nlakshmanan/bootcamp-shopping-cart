@@ -272,7 +272,21 @@ const useSelected = () => {
     }
     return [itemsSelected,initItemsSelected,addItemToCart,removeItemFromCart];
   } 
-  
+ 
+  const cartCheckout = ({itemsSelected, inventory}) => {
+    console.log(itemsSelected)
+    const inventoryRef = firebase.database().ref('/inventory')
+    let tempItems = itemsSelected
+    inventoryRef.transaction(inventory => {
+        if (inventory) {
+            Object.values(itemsSelected).forEach(item => {
+                    inventory[item.sku][item.size] -= item.quantity;
+                })
+        }
+        return inventory;
+    });
+    alert("Checkout successfull!! Thank you for Shopping!!")
+  }
 
 
 const getTotalPrice = ({items}) => {
@@ -315,6 +329,7 @@ const CartDrawer = ({user, itemsSelected, inventory , setInventory, addItemsSele
           <ListItem>
             Total price = {getTotalPrice({items})}
           </ListItem>
+          <Button onClick={() => cartCheckout(itemsSelected={itemsSelected}, inventory={inventory})}>Checkout</Button>
       </List>
     </div>
   );
@@ -379,7 +394,7 @@ const App = () => {
     }
     const inventoryRef = firebase.database().ref('/inventory')
     inventoryRef.on('value', handleData, error => alert(error));
-    return () => { db.off('value', handleData); };
+    return () => { inventoryRef.off('value', handleData); };
   }, []);
 
   useEffect(() => {
@@ -395,7 +410,7 @@ const App = () => {
       const cartRef = firebase.database().ref('/cart/' + user.uid )
       console.log("cartRef",cartRef)
       cartRef.on('value', handleData, error => alert(error));
-      return () => { db.off('value', handleData); };
+      return () => { cartRef.off('value', handleData); };
     }
     else{
       console.log("user is null")
