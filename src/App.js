@@ -273,7 +273,7 @@ const useSelected = () => {
     return [itemsSelected,initItemsSelected,addItemToCart,removeItemFromCart];
   } 
  
-  const cartCheckout = ({itemsSelected, inventory}) => {
+  const cartCheckout = ({itemsSelected}) => {
     console.log(itemsSelected)
     const inventoryRef = firebase.database().ref('/inventory')
     let tempItems = itemsSelected
@@ -292,7 +292,7 @@ const useSelected = () => {
 const getTotalPrice = ({items}) => {
   return <p> {items.reduce((total, p) => total + p.price * p.quantity, 0)} </p>
 }
-const CartDrawer = ({user, itemsSelected, inventory , setInventory, addItemsSelected,removeItemFromCart}) => {
+const CartDrawer = ({user,setItemsSelected, itemsSelected, inventory , setInventory, addItemsSelected,removeItemFromCart}) => {
   const classes = CartItemStyles();
   const [state, setState] = useState({right: false});
   const items = itemsSelected;
@@ -329,7 +329,10 @@ const CartDrawer = ({user, itemsSelected, inventory , setInventory, addItemsSele
           <ListItem>
             Total price = {getTotalPrice({items})}
           </ListItem>
-          <Button onClick={() => cartCheckout(itemsSelected={itemsSelected}, inventory={inventory})}>Checkout</Button>
+          <Button onClick={() => 
+            {cartCheckout(itemsSelected={itemsSelected}, inventory={inventory})
+            setItemsSelected(user,[],inventory, setInventory)}
+            }>Checkout</Button>
       </List>
     </div>
   );
@@ -421,7 +424,7 @@ const App = () => {
   return (
     <ul>
       <Banner user={ user } setUser={setUser}/>
-      <CartDrawer user={ user }  itemsSelected = {itemsSelected} inventory={inventory} setInventory={setInventory} addItemsSelected = {addItemsSelected} removeItemFromCart={removeItemFromCart}/>
+      <CartDrawer user={ user }  setItemsSelected={setItemsSelected} itemsSelected = {itemsSelected} inventory={inventory} setInventory={setInventory} addItemsSelected = {addItemsSelected} removeItemFromCart={removeItemFromCart}/>
       <CardList user={ user } products = {products} inventory={inventory} setInventory={setInventory} itemsSelected = {itemsSelected} addItemsSelected = {addItemsSelected}/>
     </ul>
   );
