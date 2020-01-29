@@ -276,16 +276,21 @@ const useSelected = () => {
   const cartCheckout = ({itemsSelected}) => {
     console.log(itemsSelected)
     const inventoryRef = firebase.database().ref('/inventory')
-    let tempItems = itemsSelected
-    inventoryRef.transaction(inventory => {
-        if (inventory) {
-            Object.values(itemsSelected).forEach(item => {
-                    inventory[item.sku][item.size] -= item.quantity;
-                })
-        }
-        return inventory;
-    });
-    alert("Checkout successfull!! Thank you for Shopping!!")
+    if (itemsSelected.length === 0){
+      alert("Please add items to cart to checkout!!")
+    }
+    else{
+      let tempItems = itemsSelected
+      inventoryRef.transaction(inventory => {
+          if (inventory) {
+              Object.values(itemsSelected).forEach(item => {
+                      inventory[item.sku][item.size] -= item.quantity;
+                  })
+          }
+          return inventory;
+      });
+      alert("Checkout successfull!! Thank you for Shopping!!")
+    }
   }
 
 
